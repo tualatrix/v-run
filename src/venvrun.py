@@ -2,6 +2,45 @@ from argparse import ArgumentParser, REMAINDER
 from glob import glob
 import os.path
 import sys
+import signal
+import pexpect
+from shutil import get_terminal_size
+from contextlib import contextmanager
+
+@contextmanager
+def temp_environ():
+    """Allow the ability to set os.environ temporarily"""
+    environ = dict(os.environ)
+    try:
+        yield
+    finally:
+        os.environ.clear()
+        os.environ.update(environ)
+
+def fork_compat(venv, args):
+        # Grab current terminal dimensions to replace the hardcoded default
+        # dimensions of pexpect.
+        cmd = '/bin/bash'
+        dims = get_terminal_size()
+        with temp_environ():
+            c = pexpect.spawn(cmd, ["-i"], dimensions=(dims.lines, dims.columns))
+        c.sendline('. {}/bin/activate'.format(venv))
+        if args:
+            c.sendline(" ".join(args))
+
+        # Handler for terminal resizing events
+        # Must be defined here to have the shell process in its context, since
+        # we can't pass it as an argument
+        def sigwinch_passthrough(sig, data):
+            dims = get_terminal_size()
+            c.setwinsize(dims.lines, dims.columns)
+
+        signal.signal(signal.SIGWINCH, sigwinch_passthrough)
+
+        # Interact with the new shell.
+        c.interact(escape_character=None)
+        c.close()
+        sys.exit(c.exitstatus)
 
 def run():
     parser = ArgumentParser(
@@ -77,7 +116,10 @@ def run():
         os.environ['PATH'] = path
 
     try:
-        os.execvp(cmd_args[0], cmd_args)
+        if cmd_args[0] == "shell" and len(cmd_args) == 1:
+            fork_compat(args.venv, None)
+        else:
+            os.execvp(cmd_args[0], cmd_args)
     except FileNotFoundError:
         if args.no_guess:
             raise
