@@ -52,7 +52,8 @@ def run():
 
     if not args.venv:
         venvs = []
-        for p in glob(os.path.join('*', 'bin', 'python')):
+
+        for p in glob(os.path.join('.*', 'bin', 'python')) + glob(os.path.join('*', 'bin', 'python')):
             if os.access(p, os.X_OK):
                 venvs.append(os.path.dirname(os.path.dirname(p)))
 
