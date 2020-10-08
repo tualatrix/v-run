@@ -5,7 +5,7 @@ with open("README.rst", "r") as f:
 
 setup(
     name='v-run',
-    version='0.0.0',
+    version='0.0.2',
     author='Gustavo José de Sousa',
     author_email='gustavo.jo.sousa@gmail.com',
     description='Run commands using Python virtual environment',
