@@ -20,7 +20,7 @@ def temp_environ():
 def fork_compat(venv, args):
         # Grab current terminal dimensions to replace the hardcoded default
         # dimensions of pexpect.
-        cmd = '/bin/bash'
+        cmd = os.environ['SHELL']
         dims = get_terminal_size()
         with temp_environ():
             c = pexpect.spawn(cmd, ["-i"], dimensions=(dims.lines, dims.columns))
